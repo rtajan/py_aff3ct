@@ -22,27 +22,20 @@ Py_Module<B,R,Q>
 	for (size_t t = 0; t < task_list.size(); t++)
 	{
 		auto task = task_list[t];
-		std::cout << "Task name : " << task.attr("name").cast<std::string>() << std::endl;
-
 
 		std::string task_name(task.attr("name").cast<std::string>());
-		sck_in.push_back (std::vector<int>());
-		sck_out.push_back(std::vector<int>());
-
 		this->task_map[task_name] = task;
 
 		auto &p = this->create_task(task_name);
+		sck_in.push_back (std::vector<int>());
+		sck_out.push_back(std::vector<int>());
 
 		py::list socket_in_list  = task.attr("socket_in_list");
-		std::cout << "\tInput sockets : " << std::endl;
 		for (auto sck : socket_in_list)
 		{
 			std::string sck_name  = sck.attr("name").cast<std::string>();
 			int n_elmts           = sck.attr("n_elmts").cast<int>();
 			std::string data_type = sck.attr("data_type").cast<std::string>();
-
-			std::cout << "\t\tname      : " << data_type << std::endl;
-			std::cout << "\t\tn_elmts   : " << n_elmts   << std::endl;
 
 			size_t s_in = -1;
 			if (data_type == "B")
@@ -60,7 +53,6 @@ Py_Module<B,R,Q>
 			sck_in[t].push_back(s_in);
 		}
 
-		std::cout << "\tOutput sockets : " << std::endl;
 		py::list socket_out_list  = task.attr("socket_out_list");
 		for (auto sck : socket_out_list)
 		{
@@ -68,8 +60,6 @@ Py_Module<B,R,Q>
 			int n_elmts          = sck.attr("n_elmts").cast<int>();
 			std::string data_type = sck.attr("data_type").cast<std::string>();
 
-			std::cout << "\t\tname      : " << data_type << std::endl;
-			std::cout << "\t\tn_elmts   : " << n_elmts   << std::endl;
 			size_t s_out = -1;
 			if (data_type == "B")
 				s_out = this->template create_socket_out<B >(p, sck_name, n_elmts);
@@ -111,9 +101,6 @@ Py_Module<B,R,Q>
 			if (py::detail::PyIterable_Check(result.ptr()))
 			{
 				py::list res = result;
-				py::print(args);
-				py::print(result);
-				//py::object ipython = py::module::import("IPython").attr("embed")();
 
 				for (size_t i = 0; i<p_out.size(); i++)
 				{

@@ -4,7 +4,7 @@
 #include <string>
 #include <aff3ct.hpp>
 
-#include "Module/Py_Module/py_module.hpp"
+#include "Module/Py_Module/Py_Module.hpp"
 
 #include <pybind11/embed.h>
 #include "numpy/arrayobject.h"
@@ -21,11 +21,10 @@ int main(int argc, char** argv)
 {
 	py::scoped_interpreter guard{}; // start the interpreter and keep it alive
 	py::module sys = py::module::import("sys");
-	// sys.attr("path").attr("append")("/Users/rtajan/Documents/Codes/mpwa/examples/tasks/src/");
 
 	// py::gil_scoped_acquire acquire;  for multi thread
 	// py::gil_scoped_acquire release;  for multi thread
-	py::object py_module = py::module::import("py_module").attr("My_Module")(10);
+	py::object py_module = py::module::import("py_module").attr("Py_Module")(10);
 	std::unique_ptr<Py_Module<     >> adder    (new Py_Module<     >(py_module));
 	std::unique_ptr<Py_Module<float>> printer1 (new Py_Module<float>(py_module));
 	std::unique_ptr<Py_Module<int  >> printer2 (new Py_Module<int  >(py_module));
