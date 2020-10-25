@@ -1,0 +1,4 @@
+[submodule "lib/aff3ct"]
+	path = lib/aff3ct
+	url = https://github.com/aff3ct/aff3ct.git
+	branch = development

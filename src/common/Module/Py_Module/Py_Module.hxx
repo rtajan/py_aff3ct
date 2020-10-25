@@ -1,0 +1,178 @@
+#include <string>
+#include <sstream>
+#include <Python.h>
+
+#include "Py_Module.hpp"
+
+namespace aff3ct
+{
+namespace module
+{
+template <typename B, typename R, typename Q>
+Py_Module<B,R,Q>
+::Py_Module(const py::object &py_mod, const int n_frames)
+: Module(n_frames), py_mod(py_mod), task_map(), sck_in(), sck_out()
+{
+	this->set_name      (py_mod.attr("name").cast<std::string>());
+	this->set_short_name(py_mod.attr("short_name").cast<std::string>());
+
+	py::list task_list = py_mod.attr("task_list");
+
+
+	for (size_t t = 0; t < task_list.size(); t++)
+	{
+		auto task = task_list[t];
+		std::cout << "Task name : " << task.attr("name").cast<std::string>() << std::endl;
+
+
+		std::string task_name(task.attr("name").cast<std::string>());
+		sck_in.push_back (std::vector<int>());
+		sck_out.push_back(std::vector<int>());
+
+		this->task_map[task_name] = task;
+
+		auto &p = this->create_task(task_name);
+
+		py::list socket_in_list  = task.attr("socket_in_list");
+		std::cout << "\tInput sockets : " << std::endl;
+		for (auto sck : socket_in_list)
+		{
+			std::string sck_name  = sck.attr("name").cast<std::string>();
+			int n_elmts           = sck.attr("n_elmts").cast<int>();
+			std::string data_type = sck.attr("data_type").cast<std::string>();
+
+			std::cout << "\t\tname      : " << data_type << std::endl;
+			std::cout << "\t\tn_elmts   : " << n_elmts   << std::endl;
+
+			size_t s_in = -1;
+			if (data_type == "B")
+				s_in = this->template create_socket_in<B >(p, sck_name, n_elmts);
+			else if (data_type == "R")
+				s_in = this->template create_socket_in<R>(p, sck_name, n_elmts);
+			else if (data_type == "Q")
+				s_in = this->template create_socket_in<Q>(p, sck_name, n_elmts);
+			else
+			{
+				std::stringstream message;
+				message << "Unsupported data type.";
+				throw tools::invalid_argument(__FILE__, __LINE__, __func__, message.str());
+			}
+			sck_in[t].push_back(s_in);
+		}
+
+		std::cout << "\tOutput sockets : " << std::endl;
+		py::list socket_out_list  = task.attr("socket_out_list");
+		for (auto sck : socket_out_list)
+		{
+			std::string sck_name = sck.attr("name").cast<std::string>();
+			int n_elmts          = sck.attr("n_elmts").cast<int>();
+			std::string data_type = sck.attr("data_type").cast<std::string>();
+
+			std::cout << "\t\tname      : " << data_type << std::endl;
+			std::cout << "\t\tn_elmts   : " << n_elmts   << std::endl;
+			size_t s_out = -1;
+			if (data_type == "B")
+				s_out = this->template create_socket_out<B >(p, sck_name, n_elmts);
+			else if (data_type == "Q")
+				s_out = this->template create_socket_out<Q>(p, sck_name, n_elmts);
+			else if (data_type == "R")
+				s_out = this->template create_socket_out<R>(p, sck_name, n_elmts);
+			else
+			{
+				std::stringstream message;
+				message << "Unsupported data type.";
+				throw tools::invalid_argument(__FILE__, __LINE__, __func__, message.str());
+			}
+			sck_out[t].push_back(s_out);
+		}
+
+		auto p_in  = sck_in[t];
+		auto p_out = sck_out[t];
+
+		this->create_codelet(p, [p_in, p_out](Module &m, Task &t) -> int
+		{
+			auto args = py::tuple(p_in.size());
+			for (size_t i = 0; i<p_in.size(); i++)
+			{
+				auto s = t[p_in[i]];
+				auto T = s.get_datatype();
+				size_t elt_nbr  = s.get_n_elmts(); // / m.get_n_frames()
+
+				if      (T == typeid(int8_t )) args[i] = Py_Module<>::sck2py<int8_t >(s.get_dataptr(), elt_nbr);
+				else if (T == typeid(int16_t)) args[i] = Py_Module<>::sck2py<int16_t>(s.get_dataptr(), elt_nbr);
+				else if (T == typeid(int32_t)) args[i] = Py_Module<>::sck2py<int32_t>(s.get_dataptr(), elt_nbr);
+				else if (T == typeid(int64_t)) args[i] = Py_Module<>::sck2py<int64_t>(s.get_dataptr(), elt_nbr);
+				else if (T == typeid(float  )) args[i] = Py_Module<>::sck2py<float  >(s.get_dataptr(), elt_nbr);
+				else if (T == typeid(double )) args[i] = Py_Module<>::sck2py<double >(s.get_dataptr(), elt_nbr);
+			}
+
+			py::object py_mod = static_cast<module::Py_Module<B,Q,R>&>(m).py_mod;
+			py::object result = py_mod.attr(t.get_name().c_str())(*args);
+			if (py::detail::PyIterable_Check(result.ptr()))
+			{
+				py::list res = result;
+				py::print(args);
+				py::print(result);
+				//py::object ipython = py::module::import("IPython").attr("embed")();
+
+				for (size_t i = 0; i<p_out.size(); i++)
+				{
+					auto s = t[p_out[i]];
+					auto T = s.get_datatype();
+
+					if(T == typeid(int8_t ))
+					{
+						std::vector<int8_t> res_vec = res[i].cast<std::vector<int8_t>>();
+						int8_t* s_data_ptr = static_cast<int8_t*>(s.get_dataptr());
+						std::copy(res_vec.begin(), res_vec.end(), s_data_ptr);
+					}
+					else if (T == typeid(int16_t))
+					{
+						std::vector<int16_t> res_vec = res[i].cast<std::vector<int16_t>>();
+						int16_t* s_data_ptr = static_cast<int16_t*>(s.get_dataptr());
+						std::copy(res_vec.begin(), res_vec.end(), s_data_ptr);
+					}
+					else if (T == typeid(int32_t))
+					{
+						std::vector<int32_t> res_vec = res[i].cast<std::vector<int32_t>>();
+						int32_t* s_data_ptr = static_cast<int32_t*>(s.get_dataptr());
+						std::copy(res_vec.begin(), res_vec.end(), s_data_ptr);
+					}
+					else if (T == typeid(int64_t))
+					{
+						std::vector<int64_t> res_vec = res[i].cast<std::vector<int64_t>>();
+						int64_t* s_data_ptr = static_cast<int64_t*>(s.get_dataptr());
+						std::copy(res_vec.begin(), res_vec.end(), s_data_ptr);
+					}
+					else if (T == typeid(float  ))
+					{
+						std::vector<float> res_vec = res[i].cast<std::vector<float>>();
+						float* s_data_ptr = static_cast<float*>(s.get_dataptr());
+						std::copy(res_vec.begin(), res_vec.end(), s_data_ptr);
+					}
+					else if (T == typeid(double ))
+					{
+						std::vector<double> res_vec = res[i].cast<std::vector<double>>();
+						double* s_data_ptr = static_cast<double*>(s.get_dataptr());
+						std::copy(res_vec.begin(), res_vec.end(), s_data_ptr);
+					}
+				}
+			}
+			return 0;
+		});
+
+	}
+}
+
+template <>
+template <typename T>
+py::array_t<T> Py_Module<>
+::sck2py(void* void_data_ptr, size_t data_len)
+{
+	T* data_ptr = static_cast<T*>(void_data_ptr);
+	py::array_t<T> py_array(data_len, data_ptr); // there is a copy here
+	return(py_array);
+}
+
+}
+}
