@@ -42,6 +42,9 @@ protected:
 	std::vector<std::vector<int>> sck_out;
 
 public:
+	inline Socket& operator[](const std::string tsk_sck );
+	inline Task&   operator()(const std::string tsk_name);
+
 	/*!
 	 * \brief Constructor.
 	 */
@@ -51,6 +54,8 @@ public:
 	 * \brief Destructor.
 	 */
 	virtual ~Py_Module() = default;
+
+	Py_Module<B,R,Q>* clone() const;
 
 	template <typename T>
 	static py::array_t<T> sck2py(void* data_ptr, size_t data_len);
