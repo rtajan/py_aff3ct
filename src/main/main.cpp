@@ -47,10 +47,10 @@ int main(int argc, char** argv)
 	float R = (float)K/(float)N; // code rate (R=K/N)
 
 	py::scoped_interpreter guard{}; // start the interpreter and keep it alive
-	py::object py_modem = py::module::import("py_module").attr("Py_Module")(N);
+	py::object py_modem = py::module::import("py_modulator").attr("PyModulator")(N);
 
 	// Build the modules
-	std::unique_ptr<module::Source_random         <>> source (new module::Source_random         <>(K        ));
+	std::unique_ptr<module::Source_random_fast    <>> source (new module::Source_random_fast    <>(K        ));
 	std::unique_ptr<module::Encoder_repetition_sys<>> encoder(new module::Encoder_repetition_sys<>(K, N     ));
 	std::unique_ptr<module::Py_Module             <>> modem  (new module::Py_Module             <>(py_modem ));
 	std::unique_ptr<module::Channel_AWGN_LLR      <>> channel(new module::Channel_AWGN_LLR      <>(N        ));
