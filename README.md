@@ -49,4 +49,6 @@ Compile the code on Windows (Visual Studio project)
 
 The compiled binary is in `build/bin/my_project`.
 
-	$ export PYTHONPATH=$PYTHONPATH:"/Users/rtajan/Documents/Codes/mpwa/pyhton_src"
+For the binary to find your python sources, you should add them to your PYTHONPATH
+
+	$ export PYTHONPATH=$PYTHONPATH:"path_to_your_pyhton_src"
