@@ -1,6 +1,6 @@
 #
 
-This repository contains a simple code example.
+This repository contains a code example for integrating a Python module inside an aff3ct sequence.
 
 ## Using AFF3CT as a library for your codes
 The first step is to compile AFF3CT into a library.
