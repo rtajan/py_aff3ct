@@ -17,12 +17,14 @@ class Display(Aff3ctModule):
 
 	def __init__(self, N):
 		Aff3ctModule.__init__(self)
-		t_mod = self.create_task("plot")
-		self.create_socket_in (t_mod, "x", N, "float")
+		t_plot = self.create_task("plot")
+		self.create_socket_in (t_plot, "x", N, "float")
 
 		self.fig   = plt.figure()
 		self.ax    = self.fig.add_subplot(1, 1, 1)
 		self.line, = self.ax.plot([], '.b')
 		self.i_plt = 0
+		plt.xlabel("Real part")
+		plt.ylabel("Imaginary part")
 		plt.ylim(-2,2)
 		plt.xlim(-2,2)
