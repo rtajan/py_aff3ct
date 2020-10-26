@@ -32,7 +32,6 @@ namespace module
  *
  * Please use for inheritance (instead of)
  */
-template <typename B = int, typename R = float, typename Q = R>
 class Py_Module : public Module
 {
 protected:
@@ -55,7 +54,7 @@ public:
 	 */
 	virtual ~Py_Module() = default;
 
-	Py_Module<B,R,Q>* clone() const;
+	Py_Module* clone() const;
 
 	template <typename T>
 	static py::array_t<T> sck2py(void* data_ptr, size_t data_len);

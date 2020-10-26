@@ -12,8 +12,7 @@ namespace module
 {
 
 
-template <typename B, typename R, typename Q>
-Socket& Py_Module<B,R,Q>
+Socket& Py_Module
 ::operator[](const std::string tsk_sck)
 {
 	size_t pos = tsk_sck.find("::", 0);
@@ -61,8 +60,7 @@ Socket& Py_Module<B,R,Q>
 	return Module::operator[]((size_t)t)[(size_t)s];
 }
 
-template <typename B, typename R, typename Q>
-Task& Py_Module<B,R,Q>
+Task& Py_Module
 ::operator()(const std::string tsk_name)
 {
 	int t = -1;
@@ -84,8 +82,7 @@ Task& Py_Module<B,R,Q>
 	return Module::operator[]((size_t)t);
 }
 
-template <typename B, typename R, typename Q>
-Py_Module<B,R,Q>
+Py_Module
 ::Py_Module(const py::object &py_mod, const int n_frames)
 : Module(n_frames), py_mod(py_mod), task_map(), sck_in(), sck_out()
 {
@@ -114,12 +111,12 @@ Py_Module<B,R,Q>
 			std::string data_type = sck.attr("data_type").cast<std::string>();
 
 			size_t s_in = -1;
-			if (data_type == "B")
-				s_in = this->template create_socket_in<B >(p, sck_name, n_elmts);
-			else if (data_type == "R")
-				s_in = this->template create_socket_in<R>(p, sck_name, n_elmts);
-			else if (data_type == "Q")
-				s_in = this->template create_socket_in<Q>(p, sck_name, n_elmts);
+			if      (data_type == "int8"  ) s_in = this->template create_socket_in<int8_t >(p, sck_name, n_elmts);
+			else if (data_type == "int16" ) s_in = this->template create_socket_in<int16_t>(p, sck_name, n_elmts);
+			else if (data_type == "int32" ) s_in = this->template create_socket_in<int32_t>(p, sck_name, n_elmts);
+			else if (data_type == "int64" ) s_in = this->template create_socket_in<int64_t>(p, sck_name, n_elmts);
+			else if (data_type == "float" ) s_in = this->template create_socket_in<float  >(p, sck_name, n_elmts);
+			else if (data_type == "double") s_in = this->template create_socket_in<double >(p, sck_name, n_elmts);
 			else
 			{
 				std::stringstream message;
@@ -137,12 +134,12 @@ Py_Module<B,R,Q>
 			std::string data_type = sck.attr("data_type").cast<std::string>();
 
 			size_t s_out = -1;
-			if (data_type == "B")
-				s_out = this->template create_socket_out<B >(p, sck_name, n_elmts);
-			else if (data_type == "Q")
-				s_out = this->template create_socket_out<Q>(p, sck_name, n_elmts);
-			else if (data_type == "R")
-				s_out = this->template create_socket_out<R>(p, sck_name, n_elmts);
+			if (data_type == "int8")        s_out = this->template create_socket_out<int8_t> (p, sck_name, n_elmts);
+			else if (data_type == "int16")  s_out = this->template create_socket_out<int16_t>(p, sck_name, n_elmts);
+			else if (data_type == "int32")  s_out = this->template create_socket_out<int32_t>(p, sck_name, n_elmts);
+			else if (data_type == "int64")  s_out = this->template create_socket_out<int64_t>(p, sck_name, n_elmts);
+			else if (data_type == "float")  s_out = this->template create_socket_out<float>  (p, sck_name, n_elmts);
+			else if (data_type == "double") s_out = this->template create_socket_out<double> (p, sck_name, n_elmts);
 			else
 			{
 				std::stringstream message;
@@ -152,46 +149,57 @@ Py_Module<B,R,Q>
 			sck_out[t].push_back(s_out);
 		}
 
-		auto p_in  = sck_in[t];
-		auto p_out = sck_out[t];
+		std::vector<int> p_in  = sck_in[t];
+		std::vector<int> p_out = sck_out[t];
 
-		this->create_codelet(p, [p_in, p_out](Module &m, Task &t) -> int
+		this->create_codelet(p, [t](Module &m, Task &tsk) -> int
 		{
+			module::Py_Module& m_cast = static_cast<module::Py_Module&>(m);
+			std::vector<int> &p_in  = m_cast.sck_in[t];
+			std::vector<int> &p_out = m_cast.sck_out[t];
+
 			py::gil_scoped_acquire acquire;
 			//auto t_load = std::chrono::steady_clock::now(); // Uncomment to monitor load
 			auto args = py::tuple(p_in.size());
 			for (size_t i = 0; i<p_in.size(); i++)
 			{
-				auto s = t[p_in[i]];
+				auto s = tsk[p_in[i]];
 				auto T = s.get_datatype();
 				size_t elt_nbr  = s.get_n_elmts(); // / m.get_n_frames()
 
-				if      (T == typeid(int8_t )) args[i] = Py_Module<>::sck2py<int8_t >(s.get_dataptr(), elt_nbr);
-				else if (T == typeid(int16_t)) args[i] = Py_Module<>::sck2py<int16_t>(s.get_dataptr(), elt_nbr);
-				else if (T == typeid(int32_t)) args[i] = Py_Module<>::sck2py<int32_t>(s.get_dataptr(), elt_nbr);
-				else if (T == typeid(int64_t)) args[i] = Py_Module<>::sck2py<int64_t>(s.get_dataptr(), elt_nbr);
-				else if (T == typeid(float  )) args[i] = Py_Module<>::sck2py<float  >(s.get_dataptr(), elt_nbr);
-				else if (T == typeid(double )) args[i] = Py_Module<>::sck2py<double >(s.get_dataptr(), elt_nbr);
+				if      (T == typeid(int8_t )) args[i] = Py_Module::sck2py<int8_t >(s.get_dataptr(), elt_nbr);
+				else if (T == typeid(int16_t)) args[i] = Py_Module::sck2py<int16_t>(s.get_dataptr(), elt_nbr);
+				else if (T == typeid(int32_t)) args[i] = Py_Module::sck2py<int32_t>(s.get_dataptr(), elt_nbr);
+				else if (T == typeid(int64_t)) args[i] = Py_Module::sck2py<int64_t>(s.get_dataptr(), elt_nbr);
+				else if (T == typeid(float  )) args[i] = Py_Module::sck2py<float  >(s.get_dataptr(), elt_nbr);
+				else if (T == typeid(double )) args[i] = Py_Module::sck2py<double >(s.get_dataptr(), elt_nbr);
 			}
 			//auto d_load = std::chrono::steady_clock::now() - t_load;
 
-			//auto t_decod = std::chrono::steady_clock::now(); // Uncomment to monitor processing
-			py::object py_mod = static_cast<module::Py_Module<B,Q,R>&>(m).py_mod;
-			py::list result = py_mod.attr(t.get_name().c_str())(*args);
-			//auto d_decod = std::chrono::steady_clock::now() - t_decod;
-
-			//auto t_store = std::chrono::steady_clock::now(); // Uncomment to monitor store
-			for (size_t i = 0; i<p_out.size(); i++)
+			try
 			{
-				auto s = t[p_out[i]];
-				auto T = s.get_datatype();
-				size_t byte_nbr  = s.get_databytes(); // / m.get_n_frames()
+				//auto t_decod = std::chrono::steady_clock::now(); // Uncomment to monitor processing
+				py::object* py_mod = &(m_cast.py_mod);
+				py::list result = py_mod->attr(tsk.get_name().c_str())(*args);
+				//auto d_decod = std::chrono::steady_clock::now() - t_decod;
 
-				py::array res = py::array::ensure(result[i]);
+				//auto t_store = std::chrono::steady_clock::now(); // Uncomment to monitor store
+				for (size_t i = 0; i<p_out.size(); i++)
+				{
+					auto s = tsk[p_out[i]];
+					auto T = s.get_datatype();
+					size_t byte_nbr  = s.get_databytes(); // / m.get_n_frames()
 
-				const int8_t* py_ptr = static_cast<const int8_t*>(res.data());
-				int8_t*        s_ptr = static_cast<      int8_t*>(s.get_dataptr());
-				std::copy(py_ptr, py_ptr + byte_nbr, s_ptr);
+					py::array res = py::array::ensure(result[i]);
+
+					const int8_t* py_ptr = static_cast<const int8_t*>(res.data());
+					int8_t*        s_ptr = static_cast<      int8_t*>(s.get_dataptr());
+					std::copy(py_ptr, py_ptr + byte_nbr, s_ptr);
+				}
+			}
+			catch(const std::exception &e)
+			{
+				throw tools::runtime_error(__FILE__, __LINE__, __func__, e.what());
 			}
 			//auto d_store = std::chrono::steady_clock::now() - t_store;
 
@@ -207,9 +215,8 @@ Py_Module<B,R,Q>
 	}
 }
 
-template <>
 template <typename T>
-py::array_t<T> Py_Module<>
+py::array_t<T> Py_Module
 ::sck2py(void* void_data_ptr, size_t data_len)
 {
 	T* data_ptr = static_cast<T*>(void_data_ptr);
@@ -218,11 +225,10 @@ py::array_t<T> Py_Module<>
 }
 
 
-template <typename B, typename R, typename Q>
-Py_Module<B,R,Q>* Py_Module<B,R,Q>
+Py_Module* Py_Module
 ::clone() const
 {
-	auto m = new Py_Module<B,R,Q>(*this);
+	auto m = new Py_Module(*this);
 	m->deep_copy(*this);
 	return m;
 }

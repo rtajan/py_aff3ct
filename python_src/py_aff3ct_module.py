@@ -1,15 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Thu Oct 22 10:00:45 2020
 
-@author: rtajan
-"""
 class Aff3ctModule:
     def __init__(self, n_frames = 1):
         self.n_frames = n_frames
-        self.name = "Module"
-        self.short_name = "Module"
+        self.name = self.__module__ + '.' + self.__class__.__name__
+        self.short_name = self.__class__.__name__
         self.task_list = []
 
     def set_name(self, name):

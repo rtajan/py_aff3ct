@@ -36,23 +36,25 @@ int main(int argc, char** argv)
 
 	size_t n_threads = 1;//std::thread::hardware_concurrency();
 
-	int   K         = 1000;     // number of information bits
-	int   N         = 4000;     // codeword size
-	int   fe        = 100;     // number of frame errors
-	int   seed      =   0;     // PRNG seed for the AWGN channel
-	float ebn0_min  =  0.00f; // minimum SNR value
-	float ebn0_max  =  10.01f; // maximum SNR value
+	int   K         =     640; // number of information bits
+	int   N         =    1280; // codeword size
+	int   fe        =     100; // number of frame errors
+	int   seed      =       0; // PRNG seed for the AWGN channel
+	float ebn0_min  =  30.00f; // minimum SNR value
+	float ebn0_max  =  30.01f; // maximum SNR value
 	float ebn0_step =   1.00f; // SNR step
 
 	float R = (float)K/(float)N; // code rate (R=K/N)
 
 	py::scoped_interpreter guard{}; // start the interpreter and keep it alive
-	py::object py_modem = py::module::import("py_modulator").attr("PyModulator")(N);
+	py::object py_modem = py::module::import("py_modulator").attr("Modulator")(N);
+	py::object py_plot  = py::module::import("py_display"  ).attr("Display"  )(N);
 
 	// Build the modules
 	std::unique_ptr<module::Source_random_fast    <>> source (new module::Source_random_fast    <>(K        ));
 	std::unique_ptr<module::Encoder_repetition_sys<>> encoder(new module::Encoder_repetition_sys<>(K, N     ));
-	std::unique_ptr<module::Py_Module             <>> modem  (new module::Py_Module             <>(py_modem ));
+	std::unique_ptr<module::Py_Module               > modem  (new module::Py_Module               (py_modem ));
+	std::unique_ptr<module::Py_Module               > plot   (new module::Py_Module               (py_plot  ));
 	std::unique_ptr<module::Channel_AWGN_LLR      <>> channel(new module::Channel_AWGN_LLR      <>(N        ));
 	std::unique_ptr<module::Decoder_repetition_std<>> decoder(new module::Decoder_repetition_std<>(K, N     ));
 	std::unique_ptr<module::Monitor_BFER          <>> monitor(new module::Monitor_BFER          <>(K, fe    ));
@@ -66,6 +68,7 @@ int main(int argc, char** argv)
 	(*modem  )[             "modulate::b"  ].bind((*encoder)[enc::sck::encode     ::X_N ]);
 	(*channel)[chn::sck::add_noise   ::X_N ].bind((*modem  )[            "modulate::x"  ]);
 	(*decoder)[dec::sck::decode_siho ::Y_N ].bind((*channel)[chn::sck::add_noise  ::Y_N ]);
+	(*plot   )[                 "plot::x"  ].bind((*channel)[chn::sck::add_noise  ::Y_N ]);
 	(*monitor)[mnt::sck::check_errors::U   ].bind((*encoder)[enc::sck::encode     ::U_K ]);
 	(*monitor)[mnt::sck::check_errors::V   ].bind((*decoder)[dec::sck::decode_siho::V_K ]);
 
@@ -76,7 +79,7 @@ int main(int argc, char** argv)
 	sequence->export_dot(f);
 
 	std::unique_ptr<tools::Monitor_BFER_reduction> monitor_red(new tools::Monitor_BFER_reduction( sequence->get_modules<module::Monitor_BFER<>>()));
-	monitor_red->set_reduce_frequency(std::chrono::milliseconds(500));
+	monitor_red->set_reduce_frequency(std::chrono::milliseconds(0));
 	auto tasks_per_types = sequence->get_tasks_per_types();
 
 	// configuration of the sequence tasks
@@ -124,7 +127,7 @@ int main(int argc, char** argv)
 	for (auto ebn0 = ebn0_min; ebn0 < ebn0_max; ebn0 += ebn0_step)
 	{
 		// compute the current sigma for the channel noise
-		const auto esn0  = tools::ebn0_to_esn0 (ebn0, R);
+		const auto esn0  = tools::ebn0_to_esn0 (ebn0, 2*R);
 		const auto sigma = tools::esn0_to_sigma(esn0     );
 
 		noise->set_values(sigma, ebn0, esn0);
@@ -138,8 +141,13 @@ int main(int argc, char** argv)
 		py::gil_scoped_release release;
 
 		// run the simulation sequence
+		try{
 		sequence->exec([&monitor_red, &terminal]() { return monitor_red->is_done() || terminal->is_interrupt(); });
-
+		}
+		catch(const std::exception &e)
+		{
+			std::cerr << e.what() << std::endl;
+		}
 		// final reduction
 		monitor_red->reduce();
 
