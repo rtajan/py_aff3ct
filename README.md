@@ -17,14 +17,6 @@ Compile the library on Linux/MacOS/MinGW:
 	$ cmake .. -G"Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-funroll-loops -march=native" -DAFF3CT_COMPILE_EXE="OFF" -DAFF3CT_COMPILE_STATIC_LIB="ON" -DAFF3CT_COMPILE_SHARED_LIB="ON"
 	$ make -j4
 
-Compile the library on Windows (Visual Studio project)
-
-	$ cd lib/aff3ct
-	$ mkdir build
-	$ cd build
-	$ cmake .. -G"Visual Studio 15 2017 Win64" -DCMAKE_CXX_FLAGS="-D_CRT_SECURE_NO_DEPRECATE /EHsc /MP4" -DAFF3CT_COMPILE_EXE="OFF" -DAFF3CT_COMPILE_STATIC_LIB="ON" -DAFF3CT_COMPILE_SHARED_LIB="ON"
-	$ devenv /build Release aff3ct.sln
-
 Now the AFF3CT library has been built in the `lib/aff3ct/build` folder.
 
 ## Compile your code
@@ -39,13 +31,6 @@ Compile the code on Linux/MacOS/MinGW:
 	$ cd build
 	$ cmake .. -G"Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-funroll-loops -march=native"
 	$ make
-
-Compile the code on Windows (Visual Studio project)
-
-	$ mkdir build
-	$ cd build
-	$ cmake .. -G"Visual Studio 15 2017 Win64" -DCMAKE_CXX_FLAGS="-D_SCL_SECURE_NO_WARNINGS /EHsc"
-	$ devenv /build Release my_project.sln
 
 The compiled binary is in `build/bin/my_project`.
 
