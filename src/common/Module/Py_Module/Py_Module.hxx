@@ -184,7 +184,7 @@ Py_Module
 				//auto d_decod = std::chrono::steady_clock::now() - t_decod;
 
 				//auto t_store = std::chrono::steady_clock::now(); // Uncomment to monitor store
-				for (size_t i = 0; i<p_out.size(); i++)
+				for (size_t i = 0; i<result.size(); i++)
 				{
 					auto s = tsk[p_out[i]];
 					auto T = s.get_datatype();
