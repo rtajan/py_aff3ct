@@ -73,7 +73,7 @@ Task& Py_Module
 
 Py_Module
 ::Py_Module(const py::object &py_mod, const int n_frames)
-: Module(n_frames), py_mod(py_mod), task_map(), sck_in(), sck_out()
+: Module(n_frames), py_mod(py_mod), py_codelets(), sck_in(), sck_out()
 {
 	this->set_name      (py_mod.attr("name"      ).cast<std::string>());
 	this->set_short_name(py_mod.attr("short_name").cast<std::string>());
@@ -84,7 +84,7 @@ Py_Module
 		auto task = task_list[t];
 
 		std::string task_name(task.attr("name").cast<std::string>());
-		this->task_map[task_name] = task;
+		this->py_codelets.push_back(task.attr("codelet"));
 
 		auto &p = this->create_task(task_name);
 		sck_in .push_back(std::vector<int>());
@@ -163,9 +163,9 @@ Py_Module
 			try
 			{
 				//auto t_decod = std::chrono::steady_clock::now(); // Uncomment to monitor processing
-				py::object* py_mod = &(m_cast.py_mod);
+				py::object& py_codelet = m_cast.py_codelets[t];
 				// execute the Python code
-				py::list py_scks_out = py_mod->attr(tsk.get_name().c_str())(*args);
+				py::list py_scks_out = py_codelet(*args);
 				//auto d_decod = std::chrono::steady_clock::now() - t_decod;
 
 				//auto t_store = std::chrono::steady_clock::now(); // Uncomment to monitor store

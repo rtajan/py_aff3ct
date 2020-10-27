@@ -24,7 +24,7 @@ class Py_Module : public Module
 {
 protected:
 	py::object py_mod;
-	std::map<std::string, py::object> task_map;
+	std::vector<py::object>       py_codelets;
 	std::vector<std::vector<int>> sck_in;
 	std::vector<std::vector<int>> sck_out;
 

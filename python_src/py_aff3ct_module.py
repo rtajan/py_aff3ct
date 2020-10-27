@@ -14,8 +14,8 @@ class Aff3ctModule:
     def set_short_name(self, short_name):
         self.short_name = short_name
 
-    def create_task(self, task_name):
-        the_task = Task(task_name)
+    def create_task(self, codelet, task_name=""):
+        the_task = Task(codelet, task_name)
         self.task_list.append(the_task)
         return the_task
 
@@ -32,11 +32,14 @@ class Aff3ctModule:
         return self.name
 
 
-
-
 class Task:
-    def __init__(self, name):
-        self.name = name
+    def __init__(self, codelet, name=""):
+        if name == "":
+            self.name = codelet.__name__
+        else:
+            self.name = name
+
+        self.codelet = codelet
         self.socket_in_list = []
         self.socket_out_list = []
 

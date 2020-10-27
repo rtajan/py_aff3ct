@@ -17,7 +17,7 @@ class Display(Aff3ctModule):
 
 	def __init__(self, N):
 		Aff3ctModule.__init__(self)
-		t_plot = self.create_task("plot")
+		t_plot = self.create_task(self.plot)
 		self.create_socket_in (t_plot, "x", N, "float")
 
 		self.fig   = plt.figure()

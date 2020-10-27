@@ -14,6 +14,6 @@ class Modulator(Aff3ctModule):
 		self.is2 = 1/self.s2
 
 		Aff3ctModule.__init__(self)
-		t_mod = self.create_task("modulate")
+		t_mod = self.create_task(self.modulate)
 		self.create_socket_in (t_mod, "b", N, "int32")
 		self.create_socket_out(t_mod, "x", N, "float")
