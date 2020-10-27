@@ -29,8 +29,8 @@ protected:
 	std::vector<std::vector<int>> sck_out;
 
 public:
-	inline Socket& operator[](const std::string tsk_sck );
-	inline Task&   operator()(const std::string tsk_name);
+	inline Socket& operator[](const std::string &tsk_sck );
+	inline Task&   operator()(const std::string &tsk_name);
 
 	Py_Module(const py::object &Py_Module, const int n_frames=1);
 
@@ -38,6 +38,7 @@ public:
 
 	Py_Module* clone() const;
 
+private:
 	template <typename T>
 	static py::array_t<T> sck2py(void* data_ptr, size_t data_len);
 };
