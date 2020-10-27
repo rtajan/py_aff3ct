@@ -1,7 +1,3 @@
-/*!
- * \file
- * \brief Class module::Modem.
- */
 #ifndef PY_MODULE_HPP_
 #define PY_MODULE_HPP_
 
@@ -24,14 +20,6 @@ namespace aff3ct
 {
 namespace module
 {
-
-/*!
- * \class
- *
- * \brief
- *
- * Please use for inheritance (instead of)
- */
 class Py_Module : public Module
 {
 protected:
@@ -44,14 +32,8 @@ public:
 	inline Socket& operator[](const std::string tsk_sck );
 	inline Task&   operator()(const std::string tsk_name);
 
-	/*!
-	 * \brief Constructor.
-	 */
 	Py_Module(const py::object &Py_Module, const int n_frames=1);
 
-	/*!
-	 * \brief Destructor.
-	 */
 	virtual ~Py_Module() = default;
 
 	Py_Module* clone() const;

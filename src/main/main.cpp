@@ -39,7 +39,7 @@ int main(int argc, char** argv)
 	int   K         =     640; // number of information bits
 	int   N         =    1280; // codeword size
 	int   fe        =     100; // number of frame errors
-	int   seed      =       0; // PRNG seed for the AWGN channel
+	// int   seed      =       0; // PRNG seed for the AWGN channel
 	float ebn0_min  =  30.00f; // minimum SNR value
 	float ebn0_max  =  30.01f; // maximum SNR value
 	float ebn0_step =   1.00f; // SNR step

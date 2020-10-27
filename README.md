@@ -1,8 +1,9 @@
-#
+# Python to AFF3CT
 
-This repository contains a code example for integrating a Python module inside an aff3ct sequence.
+This repository contains a code example for integrating a `Python` module inside an AFF3CT sequence.
 
 ## Using AFF3CT as a library for your codes
+
 The first step is to compile AFF3CT into a library.
 
 Get the AFF3CT library:
@@ -20,10 +21,15 @@ Compile the library on Linux/MacOS/MinGW:
 Now the AFF3CT library has been built in the `lib/aff3ct/build` folder.
 
 ## Compile your code
-Copy the cmake configuration files from the AFF3CT build
+
+Copy the `CMake` configuration files from the AFF3CT build
 
 	$ mkdir cmake && mkdir cmake/Modules
 	$ cp lib/aff3ct/build/lib/cmake/aff3ct-*/* cmake/Modules
+
+Install the `Python` dependency (`pybind11`) on Ubuntu 20.04 LTS (using `pip` is not working, see [this post](https://github.com/pybind/pybind11/issues/1379))
+
+	$ sudo apt install python3-pybind11
 
 Compile the code on Linux/MacOS/MinGW:
 
@@ -34,6 +40,6 @@ Compile the code on Linux/MacOS/MinGW:
 
 The compiled binary is in `build/bin/my_project`.
 
-For the binary to find your python sources, you should add them to your PYTHONPATH
+For the binary to find your Python sources, you should add them to your `PYTHONPATH`
 
 	$ export PYTHONPATH=$PYTHONPATH:"path_to_your_pyhton_src"

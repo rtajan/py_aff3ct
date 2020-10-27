@@ -26,7 +26,7 @@ Socket& Py_Module
 	}
 
 	int t = -1;
-	for (auto i = 0; i < this->tasks.size(); i++)
+	for (size_t i = 0; i < this->tasks.size(); i++)
 	{
 		if (this->tasks[i]->get_name() == tsk_name)
 		{
@@ -43,7 +43,7 @@ Socket& Py_Module
 	}
 
 	int s = -1;
-	for (auto i = 0; i < this->tasks[t]->sockets.size(); i++)
+	for (size_t i = 0; i < this->tasks[t]->sockets.size(); i++)
 	{
 		if (this->tasks[t]->sockets[i]->get_name() == sck_name)
 		{
@@ -64,7 +64,7 @@ Task& Py_Module
 ::operator()(const std::string tsk_name)
 {
 	int t = -1;
-	for (auto i = 0; i < this->tasks.size(); i++)
+	for (size_t i = 0; i < this->tasks.size(); i++)
 	{
 		if (this->tasks[i]->get_name() == tsk_name)
 		{
@@ -187,7 +187,7 @@ Py_Module
 				for (size_t i = 0; i<result.size(); i++)
 				{
 					auto s = tsk[p_out[i]];
-					auto T = s.get_datatype();
+					// auto T = s.get_datatype();
 					size_t byte_nbr  = s.get_databytes(); // / m.get_n_frames()
 
 					py::array res = py::array::ensure(result[i]);
