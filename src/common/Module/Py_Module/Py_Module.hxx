@@ -72,13 +72,13 @@ Task& Py_Module
 }
 
 Py_Module
-::Py_Module(const py::object &py_mod, const int n_frames)
+::Py_Module(const pybind11::object &py_mod, const int n_frames)
 : Module(n_frames), py_mod(py_mod), py_codelets(), sck_in(), sck_out()
 {
 	this->set_name      (py_mod.attr("name"      ).cast<std::string>());
 	this->set_short_name(py_mod.attr("short_name").cast<std::string>());
 
-	py::list task_list = py_mod.attr("task_list");
+	pybind11::list task_list = py_mod.attr("task_list");
 	for (size_t t = 0; t < task_list.size(); t++)
 	{
 		auto task = task_list[t];
@@ -90,7 +90,7 @@ Py_Module
 		sck_in .push_back(std::vector<int>());
 		sck_out.push_back(std::vector<int>());
 
-		py::list socket_in_list  = task.attr("socket_in_list");
+		pybind11::list socket_in_list  = task.attr("socket_in_list");
 		for (auto sck : socket_in_list)
 		{
 			const std::string sck_name  = sck.attr("name"     ).cast<std::string>();
@@ -113,7 +113,7 @@ Py_Module
 			sck_in[t].push_back(s_in);
 		}
 
-		py::list socket_out_list = task.attr("socket_out_list");
+		pybind11::list socket_out_list = task.attr("socket_out_list");
 		for (auto sck : socket_out_list)
 		{
 			const std::string sck_name  = sck.attr("name"     ).cast<std::string>();
@@ -142,9 +142,9 @@ Py_Module
 			std::vector<int> &scks_in  = m_cast.sck_in [t];
 			std::vector<int> &scks_out = m_cast.sck_out[t];
 
-			py::gil_scoped_acquire acquire;
+			pybind11::gil_scoped_acquire acquire;
 			//auto t_load = std::chrono::steady_clock::now(); // Uncomment to monitor load
-			auto args = py::tuple(scks_in.size());
+			auto args = pybind11::tuple(scks_in.size());
 			for (size_t i = 0; i < scks_in.size(); i++)
 			{
 				const auto sck       = tsk[scks_in[i]];
@@ -163,9 +163,9 @@ Py_Module
 			try
 			{
 				//auto t_decod = std::chrono::steady_clock::now(); // Uncomment to monitor processing
-				py::object& py_codelet = m_cast.py_codelets[t];
+				pybind11::object& py_codelet = m_cast.py_codelets[t];
 				// execute the Python code
-				py::list py_scks_out = py_codelet(*args);
+				pybind11::list py_scks_out = py_codelet(*args);
 				//auto d_decod = std::chrono::steady_clock::now() - t_decod;
 
 				//auto t_store = std::chrono::steady_clock::now(); // Uncomment to monitor store
@@ -175,7 +175,7 @@ Py_Module
 					// auto T = sck.get_datatype();
 					size_t databytes = sck.get_databytes(); // / m.get_n_frames()
 
-					py::array res = py::array::ensure(py_scks_out[i]);
+					pybind11::array res = pybind11::array::ensure(py_scks_out[i]);
 
 					const int8_t* py_ptr = static_cast<const int8_t*>(res.data());
 					int8_t*        s_ptr = static_cast<      int8_t*>(sck.get_dataptr());
@@ -202,11 +202,11 @@ Py_Module
 }
 
 template <typename T>
-py::array_t<T> Py_Module
+pybind11::array_t<T> Py_Module
 ::sck2py(void* void_data_ptr, size_t data_len)
 {
 	T* data_ptr = static_cast<T*>(void_data_ptr);
-	py::array_t<T> py_array(data_len, data_ptr); // there is a copy here
+	pybind11::array_t<T> py_array(data_len, data_ptr); // there is a copy here
 	return py_array;
 }
 

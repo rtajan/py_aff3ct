@@ -14,8 +14,6 @@
 #include <pybind11/numpy.h>
 #include <pybind11/stl.h>
 
-namespace py = pybind11;
-
 namespace aff3ct
 {
 namespace module
@@ -23,8 +21,8 @@ namespace module
 class Py_Module : public Module
 {
 protected:
-	py::object py_mod;
-	std::vector<py::object>       py_codelets;
+	pybind11::object py_mod;
+	std::vector<pybind11::object> py_codelets;
 	std::vector<std::vector<int>> sck_in;
 	std::vector<std::vector<int>> sck_out;
 
@@ -32,7 +30,7 @@ public:
 	inline Socket& operator[](const std::string &tsk_sck );
 	inline Task&   operator()(const std::string &tsk_name);
 
-	Py_Module(const py::object &Py_Module, const int n_frames=1);
+	Py_Module(const pybind11::object &Py_Module, const int n_frames=1);
 
 	virtual ~Py_Module() = default;
 
@@ -40,7 +38,7 @@ public:
 
 private:
 	template <typename T>
-	static py::array_t<T> sck2py(void* data_ptr, size_t data_len);
+	static pybind11::array_t<T> sck2py(void* data_ptr, size_t data_len);
 };
 }
 }
