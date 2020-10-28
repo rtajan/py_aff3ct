@@ -6,11 +6,8 @@
 
 #include "Module/Py_Module/Py_Module.hpp"
 
-#include <numpy/arrayobject.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/embed.h>
-#include <pybind11/numpy.h>
-#include <pybind11/stl.h>
 
 using namespace aff3ct;
 using namespace aff3ct::module;
@@ -32,9 +29,10 @@ int main(int argc, char** argv)
 	std::cout << "#----------------------------------------------------------"      << std::endl;
 	std::cout << "#"                                                                << std::endl;
 
-	const size_t n_threads =                 1; // std::thread::hardware_concurrency();
-	const int    K         =               640; // number of information bits
-	const int    N         =              1280; // codeword size
+	const size_t n_threads =                 2; // std::thread::hardware_concurrency();
+	const int    n_frames  =               100;
+	const int    K         =                64; // number of information bits
+	const int    N         =               128; // codeword size
 	const float  R         = (float)K/(float)N; // code rate (R=K/N)
 	const int    fe        =               100; // number of frame errors
 	const int    seed      =                 0; // PRNG seed for the AWGN channel
@@ -42,18 +40,20 @@ int main(int argc, char** argv)
 	const float  ebn0_max  =            30.01f; // maximum SNR value
 	const float  ebn0_step =             1.00f; // SNR step
 
+	tools::Gaussian_noise_generator_fast<float> gen(0);
+
 	pybind11::scoped_interpreter guard{}; // start the interpreter and keep it alive
-	pybind11::object py_modem = pybind11::module::import("py_modulator").attr("Modulator")(N);
+	pybind11::object py_modem = pybind11::module::import("py_modulator").attr("Modulator")(N, n_frames);
 	pybind11::object py_plot  = pybind11::module::import("py_display"  ).attr("Display"  )(N);
 
 	// Build the modules
-	std::unique_ptr<module::Source_random_fast    <>> source (new module::Source_random_fast    <>(K       ));
-	std::unique_ptr<module::Encoder_repetition_sys<>> encoder(new module::Encoder_repetition_sys<>(K, N    ));
-	std::unique_ptr<module::Py_Module               > modem  (new module::Py_Module               (py_modem));
-	std::unique_ptr<module::Py_Module               > plot   (new module::Py_Module               (py_plot ));
-	std::unique_ptr<module::Channel_AWGN_LLR      <>> channel(new module::Channel_AWGN_LLR      <>(N       ));
-	std::unique_ptr<module::Decoder_repetition_std<>> decoder(new module::Decoder_repetition_std<>(K, N    ));
-	std::unique_ptr<module::Monitor_BFER          <>> monitor(new module::Monitor_BFER          <>(K, fe   ));
+	std::unique_ptr<module::Source_random_fast    <>> source (new module::Source_random_fast    <>(K, 0           , n_frames));
+	std::unique_ptr<module::Encoder_repetition_sys<>> encoder(new module::Encoder_repetition_sys<>(K, N, true     , n_frames));
+	std::unique_ptr<module::Py_Module               > modem  (new module::Py_Module               (py_modem       , n_frames));
+	std::unique_ptr<module::Py_Module               > plot   (new module::Py_Module               (py_plot        , n_frames));
+	std::unique_ptr<module::Channel_AWGN_LLR      <>> channel(new module::Channel_AWGN_LLR      <>(N , gen, false , n_frames));
+	std::unique_ptr<module::Decoder_repetition_std<>> decoder(new module::Decoder_repetition_std<>(K, N, true     , n_frames));
+	std::unique_ptr<module::Monitor_BFER          <>> monitor(new module::Monitor_BFER          <>(K, fe, 0, false, n_frames));
 
 	//   ____________________                ___________________                 ___________________
 	//  |  Source::generate  |U_K -----> U_K| Encoder::encode   |X_N -----> X_N1| Modem::modulate   |X_N2
@@ -64,7 +64,7 @@ int main(int argc, char** argv)
 	(*modem  )[             "modulate::b" ].bind((*encoder)[enc::sck::encode     ::X_N]);
 	(*channel)[chn::sck::add_noise   ::X_N].bind((*modem  )[            "modulate::x" ]);
 	(*decoder)[dec::sck::decode_siho ::Y_N].bind((*channel)[chn::sck::add_noise  ::Y_N]);
-	(*plot   )[                 "plot::x" ].bind((*channel)[chn::sck::add_noise  ::Y_N]);
+	//(*plot   )[                 "plot::x" ].bind((*channel)[chn::sck::add_noise  ::Y_N]);
 	(*monitor)[mnt::sck::check_errors::U  ].bind((*encoder)[enc::sck::encode     ::U_K]);
 	(*monitor)[mnt::sck::check_errors::V  ].bind((*decoder)[dec::sck::decode_siho::V_K]);
 
