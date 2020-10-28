@@ -143,6 +143,10 @@ Py_Module
 			std::vector<int> &scks_out = m_cast.sck_out[t];
 
 			pybind11::gil_scoped_acquire acquire;
+			//auto d_load = std::chrono::nanoseconds(0);
+			//auto d_decod = std::chrono::nanoseconds(0);
+			//auto d_store = std::chrono::nanoseconds(0);
+
 			//auto t_load = std::chrono::steady_clock::now(); // Uncomment to monitor load
 			auto args = pybind11::tuple(scks_in.size());
 			for (size_t i = 0; i < scks_in.size(); i++)
@@ -158,7 +162,7 @@ Py_Module
 				else if (datatype == typeid(float  )) args[i] = Py_Module::sck2py<float  >(sck.get_dataptr(), n_elmts);
 				else if (datatype == typeid(double )) args[i] = Py_Module::sck2py<double >(sck.get_dataptr(), n_elmts);
 			}
-			//auto d_load = std::chrono::steady_clock::now() - t_load;
+			//d_load += std::chrono::steady_clock::now() - t_load;
 
 			try
 			{
@@ -166,9 +170,9 @@ Py_Module
 				pybind11::object& py_codelet = m_cast.py_codelets[t];
 				// execute the Python code
 				pybind11::list py_scks_out = py_codelet(*args);
-				//auto d_decod = std::chrono::steady_clock::now() - t_decod;
+				//d_decod += std::chrono::steady_clock::now() - t_decod;
 
-				//auto t_store = std::chrono::steady_clock::now(); // Uncomment to monitor store
+				auto t_store = std::chrono::steady_clock::now(); // Uncomment to monitor store
 				for (size_t i = 0; i < py_scks_out.size(); i++)
 				{
 					auto sck = tsk[scks_out[i]];
@@ -181,16 +185,16 @@ Py_Module
 					int8_t*        s_ptr = static_cast<      int8_t*>(sck.get_dataptr());
 					std::copy(py_ptr, py_ptr + databytes, s_ptr);
 				}
+				//d_store += std::chrono::steady_clock::now() - t_store;
+				//tsk.update_timer(0,   d_load);
+				//tsk.update_timer(1,   d_decod);
+				//tsk.update_timer(2,   d_store);
 			}
 			catch (const std::exception &e)
 			{
 				throw tools::runtime_error(__FILE__, __LINE__, __func__, e.what());
 			}
-			//auto d_store = std::chrono::steady_clock::now() - t_store;
-
-			//t.update_timer(0,   d_load);
-			//t.update_timer(1,   d_decod);
-			//t.update_timer(2,   d_store);
+			//
 
 			return 0;
 		});
@@ -214,7 +218,18 @@ pybind11::array_t<T> Py_Module
 Py_Module* Py_Module
 ::clone() const
 {
-	auto m = new Py_Module(*this);
+	pybind11::object py_mod_cpy;
+	try
+	{
+		py_mod_cpy = pybind11::module::import("copy").attr("deepcopy")(this->py_mod);
+	}
+	catch(const std::exception& e)
+	{
+		std::cerr << rang::tag::error << "Python module clone fails : " << e.what() << std::endl;
+		throw tools::runtime_error(__FILE__, __LINE__, __func__, "Cloning Python module fails.");
+	}
+
+	auto m = new Py_Module(py_mod_cpy, this->n_frames);
 	m->deep_copy(*this);
 	return m;
 }
