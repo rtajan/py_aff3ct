@@ -6,9 +6,8 @@ import matplotlib.pyplot as plt
 from py_aff3ct_module import Aff3ctModule
 class Display(Aff3ctModule):
 	def plot(self, x):
-		X = np.array(x, copy = False)
 		if  self.i_plt % 50 == 0:
-			self.line.set_data(X[::2], X[1::2])
+			self.line.set_data(x[::2], x[1::2])
 			self.fig.canvas.draw()
 			self.fig.canvas.flush_events()
 			plt.pause(0.000000000001)

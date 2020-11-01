@@ -165,12 +165,12 @@ Py_Module
 			//auto d_decod = std::chrono::nanoseconds(0);
 
 			//auto t_load = std::chrono::steady_clock::now(); // Uncomment to monitor load
-			auto args = pybind11::tuple(scks_in.size()+scks_out.size());
+			auto args = pybind11::list();
 			for (size_t i = 0; i < scks_in.size(); i++)
-				args[i] = &tsk[scks_in[i]];
+				args.append(&tsk[scks_in[i]]);
 
 			for (size_t i = 0; i < scks_out.size(); i++)
-				args[scks_in.size() + i] = &tsk[scks_out[i]];
+				args.append(&tsk[scks_out[i]]);
 
 			//d_load += std::chrono::steady_clock::now() - t_load;
 			try

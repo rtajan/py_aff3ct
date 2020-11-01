@@ -8,9 +8,7 @@ import time
 from py_aff3ct_module import Aff3ctModule
 class Modulator(Aff3ctModule):
 	def modulate(self, b, x):
-		B = np.array(b, copy = False)
-		X = np.array(x, copy = False)
-		X[:] = self.is2 - self.s2 * B[:]
+		x[:] = self.is2 - self.s2 * b[:]
 		return 0
 
 	def __init__(self, N, n_frames=1):

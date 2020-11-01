@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
+import numpy as np
 class Aff3ctModule:
 	def __init__(self, n_frames = 1):
 		self.n_frames = n_frames
@@ -39,9 +39,13 @@ class Task:
 		else:
 			self.name = name
 
-		self.codelet = codelet
+		self.codelet_ = codelet
 		self.socket_in_list = []
 		self.socket_out_list = []
+
+	def codelet(self, *args):
+		np_args = map(lambda arg:np.array(arg, copy = False), args)
+		return self.codelet_(*np_args)
 
 	def create_socket_in(self, name, n_elmts, data_type):
 		self.socket_in_list.append(Socket(name, n_elmts, data_type))
