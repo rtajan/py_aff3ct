@@ -38,3 +38,6 @@ target_compile_definitions(my_project PRIVATE NPY_NO_DEPRECATED_API=NPY_1_7_API_
 #target_link_libraries(my_project       PRIVATE common)
 #target_include_directories(common      PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/common)
 target_include_directories(my_project  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/common)
+
+pybind11_add_module(py_socket ${CMAKE_CURRENT_SOURCE_DIR}/src/bind/Socket/py_socket.cpp)
+target_link_libraries(py_socket PRIVATE aff3ct::aff3ct-static-lib)

@@ -7,7 +7,6 @@
 #include <vector>
 
 #include "Module/Task.hpp"
-#include "Module/Socket.hpp"
 #include "Module/Module.hpp"
 
 #include <pybind11/embed.h>

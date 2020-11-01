@@ -6,6 +6,7 @@
 
 #include "Module/Py_Module/Py_Module.hpp"
 
+
 #include <pybind11/pybind11.h>
 #include <pybind11/embed.h>
 
@@ -45,6 +46,7 @@ int main(int argc, char** argv)
 	pybind11::scoped_interpreter guard{}; // start the interpreter and keep it alive
 	pybind11::object py_modem = pybind11::module::import("py_modulator").attr("Modulator")(N, n_frames);
 	pybind11::object py_plot  = pybind11::module::import("py_display"  ).attr("Display"  )(N);
+	pybind11::object py_sck   = pybind11::module::import("py_socket");
 
 	// Build the modules
 	std::unique_ptr<module::Source_random_fast    <>> source (new module::Source_random_fast    <>(K, 0           , n_frames));

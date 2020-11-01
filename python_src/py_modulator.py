@@ -7,9 +7,11 @@ import threading
 import time
 from py_aff3ct_module import Aff3ctModule
 class Modulator(Aff3ctModule):
-	def modulate(self, b):
-		x = self.is2 - self.s2 * b
-		return [x.astype(np.float32)]
+	def modulate(self, b, x):
+		B = np.array(b, copy = False)
+		X = np.array(x, copy = False)
+		X[:] = self.is2 - self.s2 * B[:]
+		return 0
 
 	def __init__(self, N, n_frames=1):
 		self.s2  = math.sqrt(2.0)

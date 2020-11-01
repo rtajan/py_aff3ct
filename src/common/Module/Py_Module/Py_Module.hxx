@@ -2,11 +2,29 @@
 #include <sstream>
 #include <algorithm>
 
-#include <Python.h>
+#include "Module/Socket.hpp"
+
+//#include <Python.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
 
 #include "Py_Module.hpp"
+
+
+//PYBIND11_EMBEDDED_MODULE(py_socket, m){
+//	pybind11::class_<aff3ct::module::Socket>(m, "Socket", pybind11::buffer_protocol())
+//	//.def(py::init<py::ssize_t, py::ssize_t>())
+//	.def_buffer([](aff3ct::module::Socket &sck) -> pybind11::buffer_info {
+//			return pybind11::buffer_info(
+//				sck.get_dataptr(),                               /* Pointer to buffer */
+//				sck.get_datatype_size(),                          /* Size of one scalar */
+//				pybind11::format_descriptor<float>::format(), /* Python struct-style format descriptor */
+//				1,                                      /* Number of dimensions */
+//				{sck.get_n_elmts()},                 /* Buffer dimensions */
+//				{sck.get_datatype_size()}
+//			);
+//		});
+//}
 
 namespace aff3ct
 {
@@ -145,63 +163,34 @@ Py_Module
 			pybind11::gil_scoped_acquire acquire;
 			//auto d_load = std::chrono::nanoseconds(0);
 			//auto d_decod = std::chrono::nanoseconds(0);
-			//auto d_store = std::chrono::nanoseconds(0);
 
 			//auto t_load = std::chrono::steady_clock::now(); // Uncomment to monitor load
-			auto args = pybind11::tuple(scks_in.size());
+			auto args = pybind11::tuple(scks_in.size()+scks_out.size());
 			for (size_t i = 0; i < scks_in.size(); i++)
-			{
-				const auto sck       = tsk[scks_in[i]];
-				const auto datatype  = sck.get_datatype();
-				const size_t n_elmts = sck.get_n_elmts(); // / m.get_n_frames()
+				args[i] = &tsk[scks_in[i]];
 
-				if      (datatype == typeid(int8_t )) args[i] = Py_Module::sck2py<int8_t >(sck.get_dataptr(), n_elmts);
-				else if (datatype == typeid(int16_t)) args[i] = Py_Module::sck2py<int16_t>(sck.get_dataptr(), n_elmts);
-				else if (datatype == typeid(int32_t)) args[i] = Py_Module::sck2py<int32_t>(sck.get_dataptr(), n_elmts);
-				else if (datatype == typeid(int64_t)) args[i] = Py_Module::sck2py<int64_t>(sck.get_dataptr(), n_elmts);
-				else if (datatype == typeid(float  )) args[i] = Py_Module::sck2py<float  >(sck.get_dataptr(), n_elmts);
-				else if (datatype == typeid(double )) args[i] = Py_Module::sck2py<double >(sck.get_dataptr(), n_elmts);
-			}
+			for (size_t i = 0; i < scks_out.size(); i++)
+				args[scks_in.size() + i] = &tsk[scks_out[i]];
+
 			//d_load += std::chrono::steady_clock::now() - t_load;
-
 			try
 			{
 				//auto t_decod = std::chrono::steady_clock::now(); // Uncomment to monitor processing
-				pybind11::object& py_codelet = m_cast.py_codelets[t];
 				// execute the Python code
-				pybind11::list py_scks_out = py_codelet(*args);
-				//d_decod += std::chrono::steady_clock::now() - t_decod;
+				int return_value = m_cast.py_codelets[t](*args).cast<int>();
 
-				auto t_store = std::chrono::steady_clock::now(); // Uncomment to monitor store
-				for (size_t i = 0; i < py_scks_out.size(); i++)
-				{
-					auto sck = tsk[scks_out[i]];
-					// auto T = sck.get_datatype();
-					size_t databytes = sck.get_databytes(); // / m.get_n_frames()
-
-					pybind11::array res = pybind11::array::ensure(py_scks_out[i]);
-
-					const int8_t* py_ptr = static_cast<const int8_t*>(res.data());
-					int8_t*        s_ptr = static_cast<      int8_t*>(sck.get_dataptr());
-					std::copy(py_ptr, py_ptr + databytes, s_ptr);
-				}
-				//d_store += std::chrono::steady_clock::now() - t_store;
 				//tsk.update_timer(0,   d_load);
 				//tsk.update_timer(1,   d_decod);
-				//tsk.update_timer(2,   d_store);
+				return return_value;
 			}
 			catch (const std::exception &e)
 			{
 				throw tools::runtime_error(__FILE__, __LINE__, __func__, e.what());
 			}
-			//
-
-			return 0;
 		});
 
 		this->register_timer(p, "load");
 		this->register_timer(p, "decode");
-		this->register_timer(p, "store");
 	}
 }
 
