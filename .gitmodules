@@ -2,3 +2,6 @@
 	path = lib/aff3ct
 	url = https://github.com/aff3ct/aff3ct.git
 	branch = development
+[submodule "lib/pybind11"]
+	path = lib/pybind11
+	url = ../../pybind/pybind11

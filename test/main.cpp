@@ -2,16 +2,15 @@
 #include <memory>
 #include <vector>
 #include <string>
-#include <aff3ct.hpp>
-
-#include "Module/Py_Module/Py_Module.hpp"
-
-
 #include <pybind11/pybind11.h>
 #include <pybind11/embed.h>
+#include <aff3ct.hpp>
+
+#include "src/Module/Py_Module/Py_Module.hpp"
 
 using namespace aff3ct;
 using namespace aff3ct::module;
+namespace py = pybind11;
 
 namespace aff3ct { namespace tools {
 using Monitor_BFER_reduction = Monitor_reduction<module::Monitor_BFER<>>;
@@ -30,10 +29,10 @@ int main(int argc, char** argv)
 	std::cout << "#----------------------------------------------------------"      << std::endl;
 	std::cout << "#"                                                                << std::endl;
 
-	const size_t n_threads =                 2; // std::thread::hardware_concurrency();
-	const int    n_frames  =               100;
-	const int    K         =                64; // number of information bits
-	const int    N         =               128; // codeword size
+	const size_t n_threads =                 1; // std::thread::hardware_concurrency();
+	const int    n_frames  =                 1;
+	const int    K         =               640; // number of information bits
+	const int    N         =              1280; // codeword size
 	const float  R         = (float)K/(float)N; // code rate (R=K/N)
 	const int    fe        =               100; // number of frame errors
 	const int    seed      =                 0; // PRNG seed for the AWGN channel
@@ -43,19 +42,19 @@ int main(int argc, char** argv)
 
 	tools::Gaussian_noise_generator_fast<float> gen(0);
 
-	pybind11::scoped_interpreter guard{}; // start the interpreter and keep it alive
-	pybind11::object py_modem = pybind11::module::import("py_modulator").attr("Modulator")(N, n_frames);
-	pybind11::object py_plot  = pybind11::module::import("py_display"  ).attr("Display"  )(N);
-	pybind11::object py_sck   = pybind11::module::import("py_socket");
+
+	py::scoped_interpreter guard{}; // start the interpreter and keep it alive
+
+	py::object py_modem = py::module::import("py_modulator").attr("Modulator")(N);
 
 	// Build the modules
-	std::unique_ptr<module::Source_random_fast    <>> source (new module::Source_random_fast    <>(K, 0           , n_frames));
-	std::unique_ptr<module::Encoder_repetition_sys<>> encoder(new module::Encoder_repetition_sys<>(K, N, true     , n_frames));
-	std::unique_ptr<module::Py_Module               > modem  (new module::Py_Module               (py_modem       , n_frames));
-	std::unique_ptr<module::Py_Module               > plot   (new module::Py_Module               (py_plot        , n_frames));
-	std::unique_ptr<module::Channel_AWGN_LLR      <>> channel(new module::Channel_AWGN_LLR      <>(N , gen, false , n_frames));
-	std::unique_ptr<module::Decoder_repetition_std<>> decoder(new module::Decoder_repetition_std<>(K, N, true     , n_frames));
-	std::unique_ptr<module::Monitor_BFER          <>> monitor(new module::Monitor_BFER          <>(K, fe, 0, false, n_frames));
+	std::unique_ptr<module::Source_random_fast    <>> source (new module::Source_random_fast    <>(K    ));
+	std::unique_ptr<module::Encoder_repetition_sys<>> encoder(new module::Encoder_repetition_sys<>(K, N ));
+	std::unique_ptr<module::Channel_AWGN_LLR      <>> channel(new module::Channel_AWGN_LLR      <>(N, gen));
+	std::unique_ptr<module::Decoder_repetition_std<>> decoder(new module::Decoder_repetition_std<>(K, N ));
+	std::unique_ptr<module::Monitor_BFER          <>> monitor(new module::Monitor_BFER          <>(K, fe));
+	std::unique_ptr<module::Py_Module               > modem  (new module::Py_Module (py_modem.cast<Py_Module&>()));
+	//std::unique_ptr<module::Py_Module               > plot   (new module::Py_Module               (py_plot        , n_frames));
 
 	//   ____________________                ___________________                 ___________________
 	//  |  Source::generate  |U_K -----> U_K| Encoder::encode   |X_N -----> X_N1| Modem::modulate   |X_N2
@@ -63,14 +62,15 @@ int main(int argc, char** argv)
 	// sockets binding (connect the sockets of the tasks = fill the input sockets with the output sockets)
 	using namespace module;
 	(*encoder)[enc::sck::encode      ::U_K].bind((*source )[src::sck::generate   ::U_K]);
-	(*modem  )[             "modulate::b" ].bind((*encoder)[enc::sck::encode     ::X_N]);
-	(*channel)[chn::sck::add_noise   ::X_N].bind((*modem  )[            "modulate::x" ]);
+	(*modem  )["         modulate    ::b "].bind((*encoder)[enc::sck::encode     ::X_N]);
+	(*channel)[chn::sck::add_noise   ::X_N].bind((*modem  )["         modulate   ::x" ]);
 	(*decoder)[dec::sck::decode_siho ::Y_N].bind((*channel)[chn::sck::add_noise  ::Y_N]);
 	//(*plot   )[                 "plot::x" ].bind((*channel)[chn::sck::add_noise  ::Y_N]);
-	(*monitor)[mnt::sck::check_errors::U  ].bind((*encoder)[enc::sck::encode     ::U_K]);
+	(*monitor)[mnt::sck::check_errors::U  ].bind((*source )[src::sck::generate   ::U_K]);
 	(*monitor)[mnt::sck::check_errors::V  ].bind((*decoder)[dec::sck::decode_siho::V_K]);
 
 	std::unique_ptr<tools::Sequence> sequence(new tools::Sequence((*source)[src::tsk::generate], n_threads));
+	sequence->set_n_frames(n_frames);
 	std::ofstream f("sequence.dot");
 	sequence->export_dot(f);
 
@@ -83,7 +83,7 @@ int main(int argc, char** argv)
 	for (auto& type : tasks_per_types) for (auto& tsk : type)
 	{
 		tsk->set_autoalloc      (true ); // enable the automatic allocation of the data in the tasks
-		tsk->set_debug          (false); // disable the debug mode
+		tsk->set_debug          (false ); // disable the debug mode
 		tsk->set_debug_limit    (-1   ); // display only the 8 first bits if the debug mode is enabled
 		tsk->set_debug_precision(2    ); // display only all values if the debug mode is enabled
 		tsk->set_stats          (true ); // enable the statistics
@@ -135,7 +135,7 @@ int main(int argc, char** argv)
 		// display the performance (BER and FER) in real time (in a separate thread)
 		terminal->start_temp_report();
 
-		pybind11::gil_scoped_release release;
+		py::gil_scoped_release release;
 		try
 		{
 			// run the simulation sequence

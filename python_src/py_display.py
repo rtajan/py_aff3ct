@@ -3,7 +3,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from py_aff3ct_module import Aff3ctModule
+from py_aff3ct import Aff3ctModule
 class Display(Aff3ctModule):
 	def plot(self, x):
 		if  self.i_plt % 50 == 0:
@@ -28,3 +28,7 @@ class Display(Aff3ctModule):
 		plt.ylabel("Imaginary part")
 		plt.ylim(-2,2)
 		plt.xlim(-2,2)
+
+	def codelet(self, task, py_code):
+		np_args = map(lambda arg:np.array(arg, copy = False), task.sockets)
+		return py_code(*np_args)
