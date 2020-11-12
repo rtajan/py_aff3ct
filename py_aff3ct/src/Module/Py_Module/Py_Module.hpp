@@ -20,7 +20,7 @@ public:
 	inline Socket& operator[](const std::string &tsk_sck );
 	inline Task&   operator()(const std::string &tsk_name);
 
-	Py_Module();
+	Py_Module(const bool enable_single_wave = true);
 	Py_Module(const Py_Module& );
 
 	virtual ~Py_Module() =default;

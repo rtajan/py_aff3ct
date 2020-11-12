@@ -12,11 +12,12 @@ using namespace aff3ct::module;
 namespace py = pybind11;
 
 Py_Module
-::Py_Module()
+::Py_Module(const bool enable_single_wave)
 : Module()
 {
 	const std::string name = "Py_Module";
 	this->set_name(name);
+	this->set_single_wave(enable_single_wave);
 }
 
 Py_Module

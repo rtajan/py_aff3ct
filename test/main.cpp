@@ -46,7 +46,6 @@ int main(int argc, char** argv)
 	py::scoped_interpreter guard{}; // start the interpreter and keep it alive
 
 	py::object py_modem = py::module::import("py_modulator").attr("Modulator")(N);
-	py_modem.attr("n_frames_per_wave") = 100;
 
 	// Build the modules
 	std::unique_ptr<module::Source_random_fast    <>> source (new module::Source_random_fast    <>(K    ));
