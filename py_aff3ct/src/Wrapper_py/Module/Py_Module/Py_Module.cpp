@@ -27,4 +27,8 @@ void Wrapper_Py_Module
 	this->def("__str__",        &Py_Module::to_string);
 	this->def("__getitem__",  [](Py_Module& m, const std::string& s) { return &m[s];}, py::return_value_policy::reference);
 	this->def("__call__",     [](Py_Module& m, const std::string& s) { return &m(s);}, py::return_value_policy::reference);
+
+	this->def_property("n_frames", &Py_Module::get_n_frames, &Py_Module::set_n_frames);
+	this->def_property("n_frames_per_wave", &Py_Module::get_n_frames_per_wave, &Py_Module::set_n_frames_per_wave);
+
 };

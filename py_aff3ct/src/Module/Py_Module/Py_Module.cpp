@@ -19,13 +19,68 @@ Py_Module
 	this->set_name(name);
 }
 
+Py_Module
+::Py_Module(const Py_Module& ref)
+: Module(ref)
+{
+	this->set_name(ref.get_name());
+	if (ref.has_child())
+		this->child.reset(new py::object(ref.get_child()));
+	else
+		this->child.reset(new py::object(py::cast(ref)));
+}
+
+
+void Py_Module
+::set_n_frames_per_wave(const size_t n_frames_per_wave)
+{
+	if(this->child.get() != nullptr)
+	{
+		auto cpp_child = py::cast<Py_Module&>(*this->child);
+		cpp_child.set_n_frames_per_wave(n_frames_per_wave);
+		this->n_frames_per_wave = n_frames_per_wave;
+	}
+	else
+	{
+		Module::set_n_frames_per_wave(n_frames_per_wave);
+	}
+
+}
+
+bool Py_Module
+::has_child() const
+{
+	return this->child.get() != nullptr;
+}
+
+py::object Py_Module
+::get_child() const
+{
+	return *this->child;
+}
+
+void Py_Module
+::set_n_frames(const size_t n_frames)
+{
+	if(this->has_child())
+	{
+		auto& cpp_child = py::cast<Py_Module&>(*this->child);
+		cpp_child.set_n_frames(n_frames);
+		this->n_frames = n_frames;
+	}
+	else
+	{
+		this->Module::set_n_frames(n_frames);
+	}
+}
+
 py::object Py_Module
 ::__copy__() const
 {
 	// Cast it to py::object, this should work if the Module is a Py_Module
 	py::object py_module = py::cast(*this);
 	// Recover the python type
-	py::object      type = py_module.attr("__class__");
+	py::type      type = py_module.attr("__class__");
 	// create a new object without initializing it
 	py::object     copy_ = py_module.attr("__new__")(type);
 	// clone C++ state using copy constructor of Py_Module (copy Tasks, Sockets ...)
@@ -38,6 +93,9 @@ py::object Py_Module
 	catch(const std::exception& e)
 	{
 	}
+	Py_Module& copy = py::cast<Py_Module&>(copy_);
+	if (copy.has_child())
+		copy.child.reset();
 
 	return copy_;
 }
@@ -56,9 +114,9 @@ Py_Module* Py_Module
 {
 	// https://github.com/pybind/pybind11/issues/1049
 	py::object* py_clone = new py::object(this->__deepcopy__());
-	// Create new Py_Module from a casted version of py_clone (a cpp_clone)
+	// Create new Py_Module from a casted version of py_clone
+	// py_clone will be the child of cpp_clone
 	auto cpp_clone = new  Py_Module(py::cast<Py_Module&>(*py_clone));
-	cpp_clone->child.reset(py_clone);
 	return cpp_clone;
 }
 
@@ -99,8 +157,20 @@ std::string Py_Module
 			message << "\t\t\t\t- Name              : " << this->tasks[i]->sockets[j]->get_name() << "\n";
 			message << "\t\t\t\t- Elements per frame: " << this->tasks[i]->sockets[j]->get_n_elmts()/this->get_n_frames() << "\n";
 			message << "\t\t\t\t- Data type         : " << this->tasks[i]->sockets[j]->get_datatype_string() << "\n";
+			message << "\t\t\t\t- Data bytes        : " << this->tasks[i]->sockets[j]->get_databytes() << "\n";
+			message << "\t\t\t\t- Data ptr          : " << this->tasks[i]->sockets[j]->get_dataptr() << "\n";
 			message << "\t\t\t\t- Adress            : " << std::hex << static_cast<void*>(this->tasks[i]->sockets[j].get()) << "\n\n";
 		}
+	}
+	if (this->has_child())
+	{
+		message << "- Child : \n";
+		auto & cpp_child = py::cast<Py_Module&>(*this->child);
+		message << cpp_child.to_string();
+	}
+	else
+	{
+		message << "- Child : no child\n";
 	}
 
 

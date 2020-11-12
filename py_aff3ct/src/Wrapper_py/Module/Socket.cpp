@@ -40,8 +40,9 @@ void Wrapper_Socket
 	}
 	else
 	{
-		size_t n_row = (size_t)s.get_task().get_module().get_n_frames_per_wave();
-		size_t n_col = (size_t)s.get_n_elmts()/n_row;
+		size_t n_frames = s.get_task().get_module().get_n_frames();
+		size_t n_row    = s.get_task().get_module().get_n_frames_per_wave();
+		size_t n_col    = s.get_n_elmts()/n_frames;
 		return py::buffer_info(
 			s.get_dataptr(),            /* Pointer to buffer */
 			s.get_datatype_size(),      /* Size of one scalar */

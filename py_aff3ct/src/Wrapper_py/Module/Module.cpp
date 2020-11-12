@@ -71,4 +71,5 @@ void Wrapper_Module
 	}, "task"_a, "codelet"_a);
 
 	this->def_property_readonly("tasks", [](Module& self) -> std::vector<std::shared_ptr<Task>> { return self.tasks; });
+	this->def_property("n_frames", &Module::get_n_frames, &Module::set_n_frames);
 };
