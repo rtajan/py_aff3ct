@@ -31,6 +31,17 @@ Py_Module
 		this->child.reset(new py::object(py::cast(ref)));
 }
 
+void Py_Module
+::create_codelet(Task& task, std::function<int(Module &m, Task &t, const size_t frame_id)> codelet)
+{
+	Module::create_codelet(task,[codelet](Module &m, Task &t, const size_t f)->int
+	{
+		py::gil_scoped_acquire acquire{};
+		return codelet(m,t,f);
+	});
+}
+
+
 
 void Py_Module
 ::set_n_frames_per_wave(const size_t n_frames_per_wave)

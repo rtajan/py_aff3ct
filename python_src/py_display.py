@@ -3,8 +3,8 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from py_aff3ct import Aff3ctModule
-class Display(Aff3ctModule):
+from py_aff3ct import Py_Module
+class Display(Py_Module):
 	def plot(self, x):
 		if  self.i_plt % 50 == 0:
 			self.line.set_data(x[::2], x[1::2])
@@ -16,9 +16,10 @@ class Display(Aff3ctModule):
 		return 0
 
 	def __init__(self, N):
-		Aff3ctModule.__init__(self)
-		t_plot = self.create_task(self.plot)
-		self.create_socket_in (t_plot, "x", N, "float")
+		Py_Module.__init__(self)
+		t_plot = self.create_task("plot")
+		self.create_socket_in(t_plot, "x", N, np.float32)
+		self.create_codelet  (t_plot, lambda m,t,f: m.plot(t.sockets[0]))
 
 		self.fig   = plt.figure()
 		self.ax    = self.fig.add_subplot(1, 1, 1)
