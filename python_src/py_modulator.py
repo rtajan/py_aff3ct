@@ -13,6 +13,6 @@ class Modulator(Py_Module):
 		t_mod = self.create_task("modulate")
 		sb = self.create_socket_in (t_mod, "b", N, np.int32)
 		sx = self.create_socket_out(t_mod, "x", N, np.float32)
-		self.create_codelet(t_mod, lambda m,t,f: m.modulate(t.sockets[sb], t.sockets[sx]))
+		self.create_codelet(t_mod, lambda m,l,f: m.modulate(l[0], l[1]))
 		self.sqrt2 = math.sqrt(2)
 		self.isqrt2 = 1/math.sqrt(2)

@@ -4,6 +4,8 @@
 #include <memory>
 
 #include <pybind11/stl.h>
+#include <pybind11/numpy.h>
+#include <pybind11/functional.h>
 
 #include "Py_Module.hpp"
 
@@ -32,12 +34,17 @@ Py_Module
 }
 
 void Py_Module
-::create_codelet(Task& task, std::function<int(Module &m, Task &t, const size_t frame_id)> codelet)
+::create_codelet(Task& task, const py::function& codelet)
 {
 	Module::create_codelet(task,[codelet](Module &m, Task &t, const size_t f)->int
 	{
 		py::gil_scoped_acquire acquire{};
-		return codelet(m,t,f);
+		auto py_m = py::cast(static_cast<Py_Module&>(m));
+		py::list l;
+		for (size_t i = 0; i < t.sockets.size()-1; i++) // I don't pass the STATUS here
+			l.append(py::array(py::cast(t.sockets[i])));
+		int status = codelet(py_m,l,f).cast<int>();
+		return status; // status filled automatically after that
 	});
 }
 
