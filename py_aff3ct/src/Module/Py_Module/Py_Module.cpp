@@ -19,6 +19,8 @@ Py_Module
 {
 	const std::string name = "Py_Module";
 	this->set_name(name);
+	this->set_short_name(name);
+
 	this->set_single_wave(enable_single_wave);
 }
 
@@ -27,6 +29,7 @@ Py_Module
 : Module(ref)
 {
 	this->set_name(ref.get_name());
+	this->set_short_name(ref.get_name());
 	if (ref.has_child())
 		this->child.reset(new py::object(ref.get_child()));
 	else
