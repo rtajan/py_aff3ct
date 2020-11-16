@@ -17,13 +17,14 @@ private:
 	std::shared_ptr<py::object> child;
 
 public:
-	inline Socket& operator[](const std::string &tsk_sck );
-	inline Task&   operator()(const std::string &tsk_name);
-
 	Py_Module(const bool enable_single_wave = true);
 	Py_Module(const Py_Module& );
 
 	virtual ~Py_Module() =default;
+
+	using Module::create_task;
+	using Module::create_socket_in;
+	using Module::create_socket_out;
 
 	virtual Py_Module* clone() const;
 	virtual py::object __copy__() const;
@@ -32,7 +33,7 @@ public:
 	virtual void set_n_frames         (const size_t n_frames         );
 
 	void create_codelet(Task& task, const py::function& codelet);
-	std::string to_string() const;
+	// std::string to_string() const;
 	bool has_child() const;
 	py::object get_child() const;
 
@@ -40,5 +41,4 @@ public:
 }
 }
 
-#include "Py_Module.hxx"
 #endif /* PY_MODULE_HPP_ */

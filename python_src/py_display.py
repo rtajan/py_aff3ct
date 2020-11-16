@@ -3,7 +3,8 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from py_aff3ct import Py_Module
+from py_aff3ct.Module import Py_Module
+
 class Display(Py_Module):
 	def plot(self, x):
 		if  self.i_plt % 50 == 0:

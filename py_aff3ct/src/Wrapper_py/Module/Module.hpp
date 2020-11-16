@@ -15,11 +15,6 @@ class Module_Publicist : public Module
 {
 	public:
 	using Module::Module;
-	using Module::create_task;
-	using Module::create_socket_in;
-	using Module::create_socket_out;
-	using Module::create_codelet;
-
 	virtual ~Module_Publicist() = default;
 };
 }
@@ -30,8 +25,7 @@ namespace aff3ct
 namespace wrapper
 {
 class Wrapper_Module : public Wrapper_py,
-                       public py::class_<aff3ct::module::Module,
-                              aff3ct::module::Module_Publicist>
+                       public py::class_<aff3ct::module::Module>
 
 {
 	public:
@@ -42,5 +36,6 @@ class Wrapper_Module : public Wrapper_py,
 }
 }
 
+std::string to_string    (const aff3ct::module::Module& m, bool full = false);
 std::string create_helper(const std::string& in_out, const std::string& type);
 #endif //BIND_MODULE_HPP_

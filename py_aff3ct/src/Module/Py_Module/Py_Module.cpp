@@ -51,8 +51,6 @@ void Py_Module
 	});
 }
 
-
-
 void Py_Module
 ::set_n_frames_per_wave(const size_t n_frames_per_wave)
 {
@@ -106,7 +104,7 @@ py::object Py_Module
 	// create a new object without initializing it
 	py::object     copy_ = py_module.attr("__new__")(type);
 	// clone C++ state using copy constructor of Py_Module (copy Tasks, Sockets ...)
-	py::module::import("py_aff3ct").attr("Py_Module").attr("__init__")(copy_, py_module);
+	py::module::import("py_aff3ct").attr("Module").attr("Py_Module").attr("__init__")(copy_, py_module);
 	// clone Python state
 	try
 	{
@@ -134,20 +132,30 @@ py::object Py_Module
 Py_Module* Py_Module
 ::clone() const
 {
-	// https://github.com/pybind/pybind11/issues/1049
-	py::object* py_clone = new py::object(this->__deepcopy__());
-	// Create new Py_Module from a casted version of py_clone
-	// py_clone will be the child of cpp_clone
-	auto cpp_clone = new  Py_Module(py::cast<Py_Module&>(*py_clone));
-	return cpp_clone;
+	try
+	{
+		// https://github.com/pybind/pybind11/issues/1049
+		py::object* py_clone = new py::object(this->__deepcopy__());
+		// Create new Py_Module from a casted version of py_clone
+		// py_clone will be the child of cpp_clone
+		auto cpp_clone = new  Py_Module(py::cast<Py_Module&>(*py_clone));
+		return cpp_clone;
+	}
+	catch(const std::exception& e)
+	{
+		std::cerr << e.what() << '\n';
+		throw(e);
+	}
+
+
 }
 
-std::string Py_Module
+/*std::string Py_Module
 ::to_string() const
 {
 	py::object self = py::cast(*this);
 	std::stringstream message;
-	message << "----------------------------- Module -----------------------------" << std::endl;
+	message << "-----------------------------" << this->get_name() <<  "-----------------------------" << std::endl;
 	message << "- Name         : " << this->get_name()         << "\n";
 	message << "- Address      : " <<  std::hex << static_cast<const void*>(this) << "\n";
 	message << "- Class        : " << self.attr("__class__").attr("__name__").cast<std::string>() << "\n";
@@ -197,4 +205,4 @@ std::string Py_Module
 
 
 	return message.str();
-}
+}*/

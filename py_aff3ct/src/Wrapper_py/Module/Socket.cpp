@@ -1,4 +1,6 @@
 #include <sstream>
+#include <string>
+#include <memory>
 #include <map>
 #include <pybind11/numpy.h>
 #include "src/Wrapper_py/Module/Socket.hpp"

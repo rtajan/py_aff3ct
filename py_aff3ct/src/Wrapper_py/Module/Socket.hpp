@@ -2,9 +2,8 @@
 #define BIND_SOCKET_HPP_
 
 #include <pybind11/pybind11.h>
-#include <string>
-#include <memory>
 #include <aff3ct.hpp>
+
 #include "src/Wrapper_py/Wrapper_py.hpp"
 
 namespace py = pybind11;
@@ -23,7 +22,4 @@ class Wrapper_Socket : public Wrapper_py,
 };
 }
 }
-
-//void def_socket_class(py::class_<aff3ct::module::Socket, std::shared_ptr<aff3ct::module::Socket>> m);
-
 #endif //BIND_SOCKET_HPP_
